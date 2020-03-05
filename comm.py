@@ -1,12 +1,3 @@
-"""
-comm.py
-
-Technische Universitaet Muenchen - Lehrstuhl fuer Nachrichtentechnik
-Date: 02. März 2020
-Author: Javier Garcia <javier.garcia@tum.de>
-(C) All rights reserved
-"""
-
 import numpy as np
 
 def eig(*args):
