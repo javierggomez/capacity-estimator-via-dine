@@ -89,7 +89,7 @@ class ConfigMIMO(BasicConfig):
     m = 1  # dimension of NDT generator
 
 class ConfigMIMO2(BasicConfig):
-    config_name = "mimo"  # channel model
+    config_name = "mimo2"  # channel model
     H=np.array([[1.0, 0.5], [-1.0, 1.0]])  # channel matrix
     Rw=np.array([[1.0, 0.2], [0.2, 1.0]]) # covariance matrix of noise
     n = 2  # dimension of X,Y

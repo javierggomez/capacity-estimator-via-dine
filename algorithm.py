@@ -184,7 +184,7 @@ class Algorithm(object):
 
             return encoder
 
-        norm_layer = keras.layers.Lambda(lambda x: tf.divide(x, tf.sqrt(tf.reduce_mean(tf.square(x)))) * tf.sqrt(self.P))
+        norm_layer = keras.layers.Lambda(lambda x: tf.divide(x, tf.sqrt(tf.reduce_mean(tf.square(x)))) * tf.sqrt(self.P/self.n))
 
         channel_layer = keras.layers.Lambda(lambda x: self.channel.call(x))
         channel = keras.models.Sequential([channel_layer])
@@ -195,7 +195,7 @@ class Algorithm(object):
         return encoder
 
     def random_sample(self):
-        msg = tf.random.normal(shape=[self.batch_size, self.T, self.m], dtype=tf.float32)*tf.sqrt(self.P)
+        msg = tf.random.normal(shape=[self.batch_size, self.T, self.m], dtype=tf.float32)*tf.sqrt(self.P/self.n)
         return msg
 
     def rand_enc_samples(self, amount):
