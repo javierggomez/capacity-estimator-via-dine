@@ -4,7 +4,7 @@ import os
 import logging
 import time
 import shutil
-from configs import ConfigAWGN, ConfigFF_MA_AGN, ConfigFB_MA_AGN, ConfigMIMO
+from configs import ConfigAWGN, ConfigFF_MA_AGN, ConfigFB_MA_AGN, ConfigMIMO, ConfigMIMO2
 
 logger = logging.getLogger("logger")
 
@@ -18,6 +18,8 @@ def define_configs(args):
         config = ConfigFB_MA_AGN()
     elif args.config_name == "mimo":
         config = ConfigMIMO()
+    elif args.config_name == "mimo2":
+        config = ConfigMIMO2()
     else:
         raise ValueError("Invalid choice of configuration")
 

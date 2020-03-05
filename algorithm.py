@@ -112,6 +112,8 @@ class Algorithm(object):
             channel = ARMA_AWGN(self.config.channel_alpha, self.noise_std, [self.batch_size, 1, self.n])
         elif self.channel_name == "mimo":
             channel = MIMO(self.config.H, self.config.Rw, [self.batch_size, 1, self.n])
+        elif self.channel_name == "mimo2":
+            channel = MIMO(self.config.H, self.config.Rw, [self.batch_size, 1, self.n])
         else:
             raise ValueError("Invalid channel name")
 
