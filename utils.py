@@ -4,7 +4,7 @@ import os
 import logging
 import time
 import shutil
-from configs import ConfigAWGN, ConfigFF_MA_AGN, ConfigFB_MA_AGN
+from configs import ConfigAWGN, ConfigFF_MA_AGN, ConfigFB_MA_AGN, ConfigMIMO
 
 logger = logging.getLogger("logger")
 
@@ -16,6 +16,8 @@ def define_configs(args):
         config = ConfigFF_MA_AGN()
     elif args.config_name == "arma_fb":
         config = ConfigFB_MA_AGN()
+    elif args.config_name == "mimo":
+        config = ConfigMIMO()
     else:
         raise ValueError("Invalid choice of configuration")
 
@@ -27,7 +29,7 @@ def define_configs(args):
 
     simulation_name = get_simulation_name(config)
     config.simulation_name = simulation_name
-    config.directory = directory = "{}/results/{}/{}/{}/{}".format(os.path.dirname(sys.argv[0]),
+    config.directory = directory = "{}/results/{}/{}/{}/{}".format(os.path.dirname(os.path.abspath(sys.argv[0])),
                                                              config.config_name,
                                                              config.name,
                                                              simulation_name,
@@ -88,7 +90,7 @@ def create_exp_dir(path, scripts_to_save=None):
             os.makedirs(os.path.join(path, 'scripts'))
         for script in scripts_to_save:
             dst_file = os.path.join(path, 'scripts', os.path.basename(script))
-            shutil.copyfile(os.path.join(os.path.dirname(sys.argv[0]),script), dst_file)
+            shutil.copyfile(os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])),script), dst_file)
 
 
 def define_logger(args, directory):

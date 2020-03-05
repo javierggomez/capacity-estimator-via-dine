@@ -8,6 +8,11 @@ import csv
 from utils import preprocess
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+
+##### UNCOMMENT THIS TO DISABLE GPU #####
+# os.environ["CUDA_VISIBLE_DEVICES"]="-1"
+
+
 # logger = logging.getLogger("logger")
 
 ################## Parsing simulation arguments ##################
@@ -83,14 +88,17 @@ logger.info("\n"*3)
 
 
 ################## save results ##################
-history_di = [float(h) for h in history_di]
-history_enc = [float(h) for h in history_enc]
+di_length=len(history_di)
+enc_length=len(history_enc)
+max_length=max(di_length, enc_length)
+history_di = [float(h) for h in history_di]+['']*(max_length-di_length)
+history_enc = [float(h) for h in history_enc]+['']*(max_length-enc_length)
 with open(os.path.join(config.directory,'results.csv'), 'w') as file:
     writer = csv.writer(file)
     writer.writerows(zip(history_di, history_enc))
 
 
-directory_parent = "{}/results/{}/{}".format(os.path.dirname(sys.argv[0]),
+directory_parent = "{}/results/{}/{}".format(os.path.dirname(os.path.abspath(sys.argv[0])),
                                                              config.config_name,
                                                              config.name)
 f = open(os.path.join(directory_parent,"summary.csv"), "a")

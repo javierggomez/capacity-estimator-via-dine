@@ -1,4 +1,5 @@
 import logging
+import numpy as np
 logger = logging.getLogger("logger")
 
 class BasicConfig(object):
@@ -75,3 +76,25 @@ class ConfigFB_MA_AGN(BasicConfig):
     opt = "adam"                 # optimizer name
     lr_rate_DI = 0.0001          # lr for DINE model
     lr_rate_enc = 0.00005        # lr for NDT model
+
+class ConfigMIMO(BasicConfig):
+    config_name = "mimo"  # channel model
+    H=np.array([[1.0, 0.0], [0.0, 1.0]])  # channel matrix
+    Rw=np.eye(2) # covariance matrix of noise
+    n = 2  # dimension of X,Y
+    P = 2.0  # power of X
+    # N = 1.0  # power of channel's inner innovation process
+    feedback = False  # compute feedback capacity
+    C = None  # capacity of the used configuration (for visualization)
+    m = 1  # dimension of NDT generator
+
+class ConfigMIMO2(BasicConfig):
+    config_name = "mimo"  # channel model
+    H=np.array([[1.0, 0.5], [-1.0, 1.0]])  # channel matrix
+    Rw=np.array([[1.0, 0.2], [0.2, 1.0]]) # covariance matrix of noise
+    n = 2  # dimension of X,Y
+    P = 2.0  # power of X
+    # N = 1.0  # power of channel's inner innovation process
+    feedback = False  # compute feedback capacity
+    C = None  # capacity of the used configuration (for visualization)
+    m = 1  # dimension of NDT generator

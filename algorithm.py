@@ -18,6 +18,8 @@ tf.keras.backend.set_floatx('float32')
 from tensorflow.python.keras import backend as K
 from rnn_modified import LSTMNew
 
+import comm
+
 
 class Algorithm(object):
     def __init__(self, config):
@@ -36,7 +38,6 @@ class Algorithm(object):
         self.epochs_enc = config.epochs_enc
         self.n_steps_mc = config.n_steps_mc
         self.noise_std = np.sqrt(config.N)
-        self.capacity = config.C
 
         self.DI_hidden = config.DI_hidden
         self.DI_last_hidden = config.DI_last_hidden
@@ -67,6 +68,11 @@ class Algorithm(object):
 
         self.mean_T_y, self.mean_T_y_tild, self.mean_T_xy, self.mean_T_xy_tild = \
             (keras.metrics.Mean(), keras.metrics.Mean(), keras.metrics.Mean(), keras.metrics.Mean())
+
+
+        self.capacity = self.channel.capacity(self.P)
+        if self.capacity is None:
+            self.capacity=config.C
 
     def _build_DI_model(self):
         def build_DV(name, input_shape):
@@ -104,6 +110,8 @@ class Algorithm(object):
             channel = AWGN(self.noise_std, [self.batch_size, 1, self.n])
         elif self.channel_name in ["arma_ff", "arma_fb"]:
             channel = ARMA_AWGN(self.config.channel_alpha, self.noise_std, [self.batch_size, 1, self.n])
+        elif self.channel_name == "mimo":
+            channel = MIMO(self.config.H, self.config.Rw, [self.batch_size, 1, self.n])
         else:
             raise ValueError("Invalid channel name")
 
@@ -176,7 +184,7 @@ class Algorithm(object):
 
         norm_layer = keras.layers.Lambda(lambda x: tf.divide(x, tf.sqrt(tf.reduce_mean(tf.square(x)))) * tf.sqrt(self.P))
 
-        channel_layer = keras.layers.Lambda(lambda x: x + self.channel.call())
+        channel_layer = keras.layers.Lambda(lambda x: self.channel.call(x))
         channel = keras.models.Sequential([channel_layer])
 
         encoder = feedback() if self.feedback else forward()
@@ -444,11 +452,14 @@ class ARMA_AWGN(object):
         self.last_n = np.zeros(shape)
         self.std = std
 
-    def call(self):
+    def capacity(self, P):
+        return comm.waterfilling_conv_real(P, np.array([1]), self.std**2*np.array([1.0+self.alpha**2, self.alpha]))[0]
+
+    def call(self, x):
         new_n = np.random.randn(*self.shape) * self.std
         z = self.alpha * self.last_n + new_n
         self.last_n = new_n
-        return z
+        return x+z
 
     def reset_states(self):
         self.last_n = np.zeros(self.shape)
@@ -459,10 +470,46 @@ class AWGN(object):
         self.shape = shape
         self.std = std
 
-    def call(self):
+    def capacity(self, P):
+        return 0.5*np.log(P/self.std**2)
+
+    def call(self, x):
         z = np.random.randn(*self.shape) * self.std
-        return z
+        return x+z
 
     def reset_states(self):
         pass
+
+class MIMO(object):
+    def __init__(self, H, Rw, shape):
+        self.H=H
+        self.H_tensor=tf.constant(H, dtype=tf.float32)
+        self.Rw=Rw
+        self.A=tf.constant(comm.sqrtm(Rw), dtype=tf.float32)
+        self.n=shape[-1]
+        self.shape=shape
+
+    def capacity(self, P):
+        return comm.waterfilling_real(P, self.H, self.Rw)[0]
+
+    def call(self, x):
+        # Matrix multiplication with H
+        Hx=tf.matmul(self.H_tensor, tf.reshape(tf.transpose(x), [self.n, -1]))
+        # Addition of noise with covariance matrix Rw
+        return tf.transpose(tf.reshape(Hx+self.A @ tf.convert_to_tensor(np.random.randn(self.n, np.prod(self.shape[0:-1])), dtype=tf.float32), self.shape[::-1]))
+
+    def reset_states(self):
+        pass
+
+# class wiener_pn(object):
+#     def __init__(self, std_theta, std_complex_noise, shape):
+#         self.std_theta=std_theta
+#         self.std_complex_noise=std_complex_noise
+#         self.shape=shape
+#         self.theta=np.zeros(self.shape[:-1])
+#
+#     def capacity(self, P):
+#         return None
+#
+#     def call(self, x):
 
