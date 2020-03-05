@@ -11,8 +11,8 @@ import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
 from tqdm import tqdm
-np.random.seed(42)
-tf.random.set_seed(42)
+# np.random.seed(42)
+# tf.random.set_seed(42)
 tf.keras.backend.set_floatx('float32')
 
 from tensorflow.python.keras import backend as K
@@ -444,55 +444,80 @@ class Algorithm(object):
                 self.h_xy_model.reset_states()
         return history_mi
 
+class BasicChannel(object):
+    """A basic class showing the structure of a Channel. Inherit from this class and override the four methods to implement your own channel"""
+    def __init__(self, shape):
+        """Constructor, which takes the shape of the channel input, and optionally additional parameters of the channel"""
+        self.shape=shape
 
-class ARMA_AWGN(object):
+    def capacity(self, P):
+        """Returns the analytic capacity of the channel, if known. You may return None if not known."""
+        return np.Inf
+
+    def call(self, x):
+        """Applies the channel to x and returns the output"""
+        return x
+
+    def reset_states(self):
+        """Resets the memory of the channel"""
+        pass
+
+class ARMA_AWGN(BasicChannel):
     def __init__(self, alpha, std, shape):
-        self.shape = shape
+        super(ARMA_AWGN, self).__init__(shape)
         self.alpha = alpha
         self.last_n = np.zeros(shape)
         self.std = std
 
     def capacity(self, P):
+        """Returns the analytic capacity of the channel, if known. You may return None if not known."""
         return comm.waterfilling_conv_real(P, np.array([1]), self.std**2*np.array([1.0+self.alpha**2, self.alpha]))[0]
 
     def call(self, x):
+        """Applies the channel to x and returns the output"""
         new_n = np.random.randn(*self.shape) * self.std
         z = self.alpha * self.last_n + new_n
         self.last_n = new_n
         return x+z
 
     def reset_states(self):
+        """Resets the memory of the channel"""
         self.last_n = np.zeros(self.shape)
 
 
-class AWGN(object):
+class AWGN(BasicChannel):
     def __init__(self, std, shape):
-        self.shape = shape
+        super(AWGN, self).__init__(shape)
         self.std = std
 
     def capacity(self, P):
+        """Returns the analytic capacity of the channel, if known. You may return None if not known."""
         return 0.5*np.log(P/self.std**2)
 
     def call(self, x):
+        """Applies the channel to x and returns the output"""
         z = np.random.randn(*self.shape) * self.std
         return x+z
 
     def reset_states(self):
         pass
 
-class MIMO(object):
+class MIMO(BasicChannel):
+    """Real MIMO channel y = H @ x + w, with arbitrary channel matrix H and arbitrary noise covariance matrix Rw"""
     def __init__(self, H, Rw, shape):
+        super(MIMO, self).__init__(shape)
         self.H=H
         self.H_tensor=tf.constant(H, dtype=tf.float32)
         self.Rw=Rw
         self.A=tf.constant(comm.sqrtm(Rw), dtype=tf.float32)
         self.n=shape[-1]
-        self.shape=shape
 
     def capacity(self, P):
+        """Returns the analytic capacity of the channel, if known. You may return None if not known."""
         return comm.waterfilling_real(P, self.H, self.Rw)[0]
 
     def call(self, x):
+        """Applies the channel to x and returns the output"""
         # Matrix multiplication with H
         Hx=tf.matmul(self.H_tensor, tf.reshape(tf.transpose(x), [self.n, -1]))
         # Addition of noise with covariance matrix Rw
