@@ -102,6 +102,6 @@ directory_parent = "{}/results/{}/{}".format(os.path.dirname(os.path.abspath(sys
                                                              config.config_name,
                                                              config.name)
 f = open(os.path.join(directory_parent,"summary.csv"), "a")
-f.write("{:100s},{:010d},{:2.5f}\n".format(config.simulation_name,config.seed, DI))
+f.write("{:100s},seed={:010d}, P={:2.5f}, capacity={:2.5f}, DI={:2.5f}\n".format(config.simulation_name,config.seed, alg.P, alg.capacity, DI))
 f.close()
 
